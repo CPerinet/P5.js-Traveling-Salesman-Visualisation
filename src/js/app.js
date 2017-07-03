@@ -2,7 +2,7 @@
 var vals = [];
 var img;
 
-var bestScore = 0;
+var bestScore = 1000000000;
 var bestPath = [];
 var s = '_START\n';
 
@@ -12,6 +12,7 @@ var maxCount = 0;
 var bip = new Audio('src/sounds/bip.wav');
 var done = new Audio('src/sounds/done.wav');
 
+var isDone = false;
 
 function setup() {
   var c = createCanvas(window.innerWidth,window.innerHeight);
@@ -52,61 +53,63 @@ function draw() {
   // CURSOR SELECT
   selectCursor(vals);
 
-  // STEP 1
-  var largestI = -1;
-  for ( var i = 0; i < vals.length - 1; i++ ) {
-    if ( vals[i].order < vals[i+1].order ) {
-      largestI = i;
-    }
-  }
-
-  if ( largestI == -1 ) {
-    //console.log("finished");
-  } else {
-
-    // STEP 2
-    var largestJ = -1;
-    for ( var j = 0; j < vals.length; j++ ) {
-      if ( vals[largestI].order < vals[j].order ) {
-        largestJ = j;
+  if (!isDone && vals.length > 1) {
+    // STEP 1
+    var largestI = -1;
+    for ( var i = 0; i < vals.length - 1; i++ ) {
+      if ( vals[i].order < vals[i+1].order ) {
+        largestI = i;
       }
     }
 
-    // STEP 3
-    var t = vals[largestI];
-    vals[largestI] = vals[largestJ];
-    vals[largestJ] = t;
+    if ( largestI == -1 ) {
+      //console.log("finished");
+    } else {
 
-    // STEP 4
-    var endArray = vals.splice(largestI+1);
-    endArray.reverse();
-    vals = vals.concat( endArray );
+      // STEP 2
+      var largestJ = -1;
+      for ( var j = 0; j < vals.length; j++ ) {
+        if ( vals[largestI].order < vals[j].order ) {
+          largestJ = j;
+        }
+      }
 
-    //SCORE
-    var score = calcDist(vals);
-    if ( score < bestScore ) {
-      bestScore = score;
-      bestPath = vals.slice();
-      bip.play();
+      // STEP 3
+      var t = vals[largestI];
+      vals[largestI] = vals[largestJ];
+      vals[largestJ] = t;
+
+      // STEP 4
+      var endArray = vals.splice(largestI+1);
+      endArray.reverse();
+      vals = vals.concat( endArray );
+
+      //SCORE
+      var score = calcDist(vals);
+      if (score < bestScore ) {
+        bestPath = vals.slice();
+        bestScore = score;
+        bip.play();
+      }
+
+      if ( Math.floor( s.length / ( vals.length * 2 - 1 ) ) > 60 ) {
+          s = '';
+      }
+
+      for ( var i = 0; i < vals.length; i++ ) {
+        s += vals[i].order;
+        s += ' '
+      }
+
+      s += '\n';
+
+      count++;
+
+      if ( Math.floor( count * 100 / maxCount ) == 100 ) {
+        done.play();
+        isDone = true;
+      }
     }
-
-    if ( Math.floor( s.length / ( vals.length * 2 - 1 ) ) > 60 ) {
-        s = '';
-    }
-
-    for ( var i = 0; i < vals.length; i++ ) {
-      s += vals[i].order;
-      s += ' '
-    }
-
-    s += '\n';
-
-    count++;
-
-    if ( Math.floor( count * 100 / maxCount ) == 100 ) {
-      done.play();
-    }
-
   }
 
   fill(255, 255, 255, 90);
@@ -187,7 +190,8 @@ function reset() {
   count = 1;
   maxCount = factorial(vals.length);
   bestScore = calcDist(vals);
-  bestPath = vals;
+  bestPath = vals.slice();
+  isDone = false;
 
   vals.sort(compare);
 
